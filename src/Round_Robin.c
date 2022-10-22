@@ -32,9 +32,8 @@ int finished_check(struct Process *processes, int len)
 
 void round_robin(struct Process *processes, int len, int time_slice)
 {
-	int temp_tat;
+	int temp_tat = 0;
 	printf("Gaantt Chart:\n");
-	//printf("%d ", temp_tat);
 
 	while (finished_check(processes, len))
 	{
@@ -45,14 +44,15 @@ void round_robin(struct Process *processes, int len, int time_slice)
 				if (processes[i].time_remaining >= time_slice)
 				{
 					processes[i].time_remaining -= time_slice;
-					for (int j=0; j < len; ++i)
+					for (int j=0; j < len; ++j)
 					{
 						if (j != i && processes[j].status == PENDING)
 						{
 							processes[j].waiting_time += time_slice;
-							temp_tat += time_slice;			
 						}
 					}
+					printf("%d P%d ", temp_tat, processes[i].p_id);
+					temp_tat += time_slice;	
 				}
 				else
 				{
@@ -61,17 +61,17 @@ void round_robin(struct Process *processes, int len, int time_slice)
 						if (j != i && processes[j].status == PENDING)
 						{
 							processes[j].waiting_time += processes[i].time_remaining;
-							temp_tat += processes[i].time_remaining;
 						}
 					}
+					printf("%d P%d ", temp_tat, processes[i].p_id);
+					temp_tat += processes[i].time_remaining;
 					processes[i].time_remaining = 0;
 				}
-				printf("%d P%d ", temp_tat, processes[i].p_id);
-			}
-			if (processes[i].time_remaining == 0)
-			{
-				processes[i].turn_around_time = temp_tat - processes[i].waiting_time;
-				processes[i].status = FINISHED;
+				if (processes[i].time_remaining == 0)
+				{
+					processes[i].turn_around_time = temp_tat;
+					processes[i].status = FINISHED;
+				}
 			}
 		}
 	}
@@ -123,7 +123,7 @@ int main()
 		processes[i].turn_around_time = 0;
 		processes[i].status = PENDING;
 	}
-	
+
 	printf("\nEnter the value of time slice: ");
 	int time_slice;
 	scanf("%d", &time_slice);
