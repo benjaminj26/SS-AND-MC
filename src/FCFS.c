@@ -75,6 +75,6 @@ int main()
 		processes[i].turn_around_time = 0;
 	}
 	fcfs(processes, proc_len);
-	
+	free(processes);
 	return 0;
 }

@@ -227,7 +227,7 @@ int main()
 	int page_len;
 	scanf("%d", &page_len);
 
-	int pages[page_len];
+	int *pages = (int *)calloc(page_len, sizeof(int));
 	printf("Enter %d pages:\n", page_len);
 	for (int i=0; i < page_len; ++i)
 	{
@@ -237,7 +237,7 @@ int main()
 	printf("Enter the size of page buffer: ");
 	int buffer_len;
 	scanf("%d", &buffer_len);
-	int buffer[buffer_len];
+	int *buffer = (int *)calloc(buffer_len, sizeof(int));
 	
 	int exit_condition = 1;
 	do
@@ -298,5 +298,7 @@ int main()
 		printf("\n");
 	}while(exit_condition);
 	printf("Exiting\n");
+	free(pages);
+	free(buffer);
 	return 0;
 }
