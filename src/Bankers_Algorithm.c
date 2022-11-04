@@ -113,7 +113,7 @@ int main()
 	printf ("\nEnter the number of instances available for each resource\n");
 	int available [res_len];
 	
-	for (int i = 0; i < proc_len; ++i)
+	for (int i = 0; i < res_len; ++i)
 	{
 		printf ("Resource %d: ", i + 1);
 		scanf ("%d", &available[i]);
