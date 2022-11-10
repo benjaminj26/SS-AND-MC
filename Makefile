@@ -1,5 +1,5 @@
-FILE = src/Round_Robin.c
-PROG = build/Round_Robin
+FILE = src/Process_Scheduling.c
+PROG = build/Process_Scheduling
 
 CC = gcc
 CFLAGS = -Wall -o
