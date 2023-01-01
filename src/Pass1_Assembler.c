@@ -15,7 +15,7 @@ struct Pass_1
 
 struct Symtab
 {
-	label[20];
+	char label[20];
 };
 
 int main()
@@ -70,72 +70,104 @@ int main()
 		return 0;
 	}
 	
-	//fprintf(f_int, "Hello World\n");
-	//fprintf(f_int, "Good Bye\n");
-	//fprintf(f_int, "Finished this problem now\n");
-	
 	unsigned exit_condition = 1;
-	unsigned locctr = 0;
+	unsigned locctr;
+	unsigned starting_location;
+	unsigned prog_len;
+
+	char label[20];
+	char opcode[10];
+	char operand[20];
+
+	char * line = NULL;
+	size_t line_len = 0;
+	getline(&line, &line_len, f_src);
+	if (line[0] != ';')
+	{
+		sscanf(line, "%s %s %s", label, opcode, operand);
+		if (strcmp(opcode, "START") == 0)
+		{
+			sscanf(operand, "%u", &starting_location);
+			locctr = starting_location;
+			fputs(line, f_int);
+		}
+		else
+		{
+			starting_location = 0;
+			locctr = 0;
+		}
+	}
+	free(line);
+
+	//To clear the symtab from the previous output
+	fclose(fopen(symtab, "w"));
 	
 	while (exit_condition)
-	{
-		char * line = NULL;
-		size_t line_len = 0;
-		getline(&line, &line_len, f_src);
-		
+	{	
 		if (line[0] != ';')
 		{
-			char label[20];
-			char opcode[4];
-			char operand[20];
+			line = NULL;
+			line_len = 0;
+			getline(&line, &line_len, f_src);
 			sscanf(line, "%s %s %s", label, opcode, operand);
-			int flag = 0;
-			if (strcmp (opcode, "START") == 0)
-			{
+			// printf("%s %s %s\n", label, opcode, operand);
 			
-			}
-			else if (strcmp (opcode, "END") == 0)
+			if (strcmp (opcode, "END") == 0)
 			{
-			
+				prog_len = locctr - starting_location;
+				fputs(line, f_int);
+				fprintf(f_int, "Program Length: %d\n", prog_len);
+				exit_condition = 0;
 			}
 			else
 			{
-				FILE * f_symtab = (FILE *)fopen(symtab, "r");
+				//Updating the Symtab
+				FILE * f_symtab = (FILE *)fopen(symtab, "a+");
 				if (f_symtab == NULL)
 				{
 					printf("Unable to open file %s\n", symtab);
 					return 0;
 				}
-				size_t true_len = 10;
-				size_t sym_len = 0;
-				struct Symtab * sym = (struct Symtab *) calloc (true_len, sizeof (struct Symtab));
-				while (!feof(f_symtab))
+				if (strcmp("**", label) != 0)
 				{
-					if (sym_len == true_len)
+					int flag = 0;
+					char *symbol;
+					size_t symbol_len = 0;
+					while (getline(&symbol, &symbol_len, f_symtab) != -1)
 					{
-						true_len += 10;
-						sym = (struct Symtab *) realloc (sym, true_len * sizeof (struct Symtab));
+						char symtab_label[20];
+						unsigned symtab_location;
+
+						sscanf(symbol, "%s %u", symtab_label, &symtab_location);
+						if (strcmp(symtab_label, label) == 0)
+						{
+							printf("Error\nThe symbol %s is repeating\n", symtab_label);
+							flag = 1;
+						}
+
+						free(symbol);
+						symbol = NULL;
+						symbol_len = 0;
 					}
-					char * sym_line = NULL;
-					size_t sym_line_len = 0;
-					getline(&sym_line, &sym_line_len, f_symtab);
-
-					strcpy(sym[sym_len], sym_line);
-					sym_len++;
-
-					free(sym_line);
+					rewind(f_symtab);
+					if (flag == 1)
+					{
+						return 0;
+					}
+					else
+					{
+						fprintf(f_symtab, "%s %u\n", label, locctr);
+					}
 				}
 				fclose(f_symtab);
+
+				//Writing to intermediate file
 				
-				f_symtab = (FILE *) fopen(symtab, "a");
-				fclose();
-				
-				free(sym);
 			}
 			
+			free(line);
 		}
 		
-		free(line);
 	}
 	
 	fclose(f_src);
