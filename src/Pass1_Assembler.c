@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,10 +20,7 @@ struct Symtab
 };
 
 int main()
-{
-	struct Pass_1 *opcodes = (struct Pass_1 *) calloc (OPCODE_LEN, sizeof(struct Pass_1));
-	
-	//=============Reading the Opcode values from Opcode.txt and storing them to a struct===============
+{	
 	FILE * f_optab = (FILE *)fopen(optab, "r");
 	
 	if (f_optab == NULL)
@@ -31,30 +29,6 @@ int main()
 		return 0;
 	}
 	
-	unsigned iterator = 0;
-	while (!feof(f_optab) && iterator < OPCODE_LEN)
-	{
-		char *line = NULL;
-		size_t line_len = 0;
-		getline(&line, &line_len, f_optab);
-		
-		if (line[0] == '#')
-		{
-			free (line);
-			continue;
-		}
-		else
-		{
-			sscanf(line, "%s", opcodes[iterator].opcode);
-			//printf("%s %d\n", opcodes[iterator].opcode, opcodes[iterator].value);
-			iterator++;
-			free(line);
-		}
-		
-	}
-	
-	fclose(f_optab);
-	//=============================================END==============================================
 	
 	FILE * f_src = (FILE *)fopen(src, "r");
 	if (f_src == NULL)
@@ -84,7 +58,7 @@ int main()
 	getline(&line, &line_len, f_src);
 	if (line[0] != ';')
 	{
-		sscanf(line, "%s %s %s", label, opcode, operand);
+		sscanf(line, "%s %s %s\n", label, opcode, operand);
 		if (strcmp(opcode, "START") == 0)
 		{
 			sscanf(operand, "%u", &starting_location);
@@ -95,6 +69,7 @@ int main()
 		{
 			starting_location = 0;
 			locctr = 0;
+			fprintf(f_int, "%u %s %s %s\n", locctr, label, opcode, operand);
 		}
 	}
 	free(line);
@@ -103,26 +78,30 @@ int main()
 	fclose(fopen(symtab, "w"));
 	
 	while (exit_condition)
-	{	
+	{
+		line = NULL;
+		line_len = 0;
+		if (getline(&line, &line_len, f_src) == -1)
+		{
+			exit_condition = 0;
+			continue;
+		}
 		if (line[0] != ';')
 		{
-			line = NULL;
-			line_len = 0;
-			getline(&line, &line_len, f_src);
-			sscanf(line, "%s %s %s", label, opcode, operand);
-			// printf("%s %s %s\n", label, opcode, operand);
+			sscanf(line, "%s %s %s\n", label, opcode, operand);
+			//Writing to intermediate file
+			fprintf(f_int, "%u %s %s %s\n", locctr, label, opcode, operand);
 			
 			if (strcmp (opcode, "END") == 0)
 			{
 				prog_len = locctr - starting_location;
-				fputs(line, f_int);
-				fprintf(f_int, "Program Length: %d\n", prog_len);
+				fprintf(f_int, "Program Length: %u\n", prog_len);
 				exit_condition = 0;
 			}
 			else
 			{
 				//Updating the Symtab
-				FILE * f_symtab = (FILE *)fopen(symtab, "a+");
+				FILE * f_symtab = (FILE *)fopen(symtab, "r+");
 				if (f_symtab == NULL)
 				{
 					printf("Unable to open file %s\n", symtab);
@@ -143,26 +122,71 @@ int main()
 						{
 							printf("Error\nThe symbol %s is repeating\n", symtab_label);
 							flag = 1;
+							break;
 						}
 
 						free(symbol);
 						symbol = NULL;
 						symbol_len = 0;
 					}
-					rewind(f_symtab);
 					if (flag == 1)
 					{
-						return 0;
+						exit_condition = 1;
+						fclose(f_symtab);
+						free(line);
+						continue;
 					}
 					else
 					{
+						fseek(f_symtab, 0, SEEK_END);
 						fprintf(f_symtab, "%s %u\n", label, locctr);
 					}
-				}
-				fclose(f_symtab);
 
-				//Writing to intermediate file
-				
+				}
+				char temp_opcode[10];
+				unsigned obj_code;
+				char flag = 0;
+				char *temp_line = NULL;
+				size_t temp_len = 0;
+				while (getline(&temp_line, &temp_len, f_optab) != -1)
+				{
+					sscanf(temp_line, "%s %u\n", temp_opcode, &obj_code);
+					if (strcmp(temp_opcode, opcode) == 0)
+					{
+						locctr += 3;
+						flag = 1;
+						break;
+					}
+					free(temp_line);
+					temp_line = NULL;
+					temp_len = 0;
+				}
+				if (flag == 0)
+				{
+					if (strcmp(opcode, "WORD") == 0)
+					{
+						locctr += 3;
+					}
+					else if (strcmp(opcode, "RESW") == 0)
+					{
+						locctr += 3 * atoi(operand);
+					}
+					else if (strcmp(opcode, "RESB") == 0)
+					{
+						locctr += atoi(operand);
+					}
+					else if (strcmp(opcode, "BYTE") == 0)
+					{
+						//To exclude the single quotes and character 'C'
+						locctr += (strlen(operand) - 3);
+					}
+					else
+					{
+						printf("Invalid Opcode: %s\n", opcode);
+						exit_condition = 0;
+					}
+				}
+				fclose(f_symtab);				
 			}
 			
 			free(line);
@@ -172,7 +196,7 @@ int main()
 	
 	fclose(f_src);
 	fclose(f_int);
-	
-	free(opcodes);
+	fclose(f_optab);
+
 	return 0;
 }
