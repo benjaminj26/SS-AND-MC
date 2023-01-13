@@ -8,16 +8,6 @@ const char * optab = "Optab.txt";
 const char * src = "Source_Code.txt";
 const char * int_file = "Intermediate_File.txt";
 
-struct Pass_1
-{
-	char opcode[5];
-};
-
-struct Symtab
-{
-	char label[20];
-};
-
 int main()
 {	
 	FILE * f_optab = (FILE *)fopen(optab, "r");
